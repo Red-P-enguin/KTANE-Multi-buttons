@@ -64,8 +64,8 @@ public class SimpleModuleScript : MonoBehaviour {
 	void pressedCylinder(KMSelectable pressedButton)
 	{
 		GetComponent<KMAudio>().PlayGameSoundAtTransformWithRef(KMSoundOverride.SoundEffect.ButtonPress, transform);
-		int buttonPosition;
-		for(int i = 0; i < cylinders.Count; i++)
+		int buttonPosition = new int();
+		for(int i = 0; i < cylinders.Length; i++)
 		{
 			if (pressedButton == cylinders[i])
 			{
@@ -82,22 +82,29 @@ public class SimpleModuleScript : MonoBehaviour {
 				incorrect = true;
 				Log ("Strike! There are less than 2 batteries.");
 			}
+			break;
 			case 1:
 			if(info.GetBatteryCount() < 1)
 			{
 				incorrect = true;
 				Log ("Strike! There are no batteries.");
 			}
+			break;
 			case 2:
 			if(info.GetBatteryCount() < 1)
 			{
 				incorrect = true;
 				Log ("Strike! There are no batteries.");
 			}
+			break;
+			default:
+			Log("Not implemented or not button 1, 2, or 3");
+			break;
 		}
 
 		if(incorrect)
 		{
+			incorrect = false;
 			module.HandleStrike ();
 		}
 		else
@@ -119,6 +126,7 @@ public class SimpleModuleScript : MonoBehaviour {
 		{
 			module.HandleStrike ();
 			Log ("Striked!");
+			InputAns = 0;
 		}
 	}
 
