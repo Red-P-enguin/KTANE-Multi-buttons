@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using KModkit;
@@ -11,11 +11,10 @@ public class SimpleModuleScript : MonoBehaviour {
 	public KMAudio audio;
 	public KMBombInfo info;
 	public KMBombModule module;
-	public KMSelectable cylinder1;
-	public KMSelectable cylinder2;
-	public KMSelectable cylinder3;
+	public KMSelectable[] cylinders;
 	public KMSelectable cylinderSubmit;
-	public AudioSource playSound;
+    static int ModuleIdCounter = 1;
+    int ModuleId;
 
 	public int ans = 0;
 	public int InputAns = 0;
@@ -23,105 +22,146 @@ public class SimpleModuleScript : MonoBehaviour {
 	public int StageLim;
 
 	bool _isSolved = false;
+	bool incorrect = false;
+
+	void Awake() {
+		ModuleId = ModuleIdCounter++;
+
+		foreach (KMSelectable button in cylinders)
+        {
+            KMSelectable pressedButton = button;
+            button.OnInteract += delegate () { pressedCylinder(pressedButton); return false; };
+        }
+		cylinderSubmit.OnInteract += delegate () { submit(); return false; };
+	}
 
 	void Start ()
 	{
-		module.HandlePass ();
-		print ("Why");
-		if (info.GetSerialNumberLetters ().Any ("BROKE".Contains))
+		//module.HandlePass ();
+		Log ("Why");
+		if (info.GetSerialNumberLetters().Any ("BROKE".Contains))
 		{
 			ans++;
-			print ("ans is added 1");
+			Log ("Serial number shares a letter with BROKE");
 		}  
-		else
-		{
-			print ("ans is unchanged");
-		}
-		if (info.GetSerialNumberLetters ().Any ("HELLO".Contains)) 
+		if (info.GetSerialNumberLetters().Any ("HELLO".Contains)) 
 		{
 			ans++;
-			print ("ans is added 1");
-		}
-		else
-		{
-			print ("ans is unchanged");
+			Log ("Serial number shares a letter with HELLO");
 		}
 		if (info.GetPortCount () > 0) 
 		{
 			ans++;
-			print ("ans is added 1");
-		}
-		else
-		{
-			print ("ans is unchanged");
+			Log ("There are more than 0 ports");
 		}
 		if (info.GetBatteryCount() > 2) 
 		{
 			ans++;
-			print ("ans is added 1");
-		}
-		else
-		{
-			print ("ans is unchanged");
-		}
-
-		if (StageCur > StageLim) 
-		{
-			module.HandlePass ();
-			print ("Did it!");
+			Log ("There are more than 2 batteries");
 		}
 	}
 
-	public void Button1()
+	void pressedCylinder(KMSelectable pressedButton)
 	{
-		playSound.Play ();
+		GetComponent<KMAudio>().PlayGameSoundAtTransformWithRef(KMSoundOverride.SoundEffect.ButtonPress, transform);
+		int buttonPosition;
+		for(int i = 0; i < cylinders.Count; i++)
+		{
+			if (pressedButton == cylinders[i])
+			{
+				buttonPosition = i;
+				break;
+			}
+		}
+
+		switch (buttonPosition)
+		{
+			case 0:
+			if(info.GetBatteryCount() < 2)
+			{
+				incorrect = true;
+				Log ("Strike! There are less than 2 batteries.");
+			}
+			case 1:
+			if(info.GetBatteryCount() < 1)
+			{
+				incorrect = true;
+				Log ("Strike! There are no batteries.");
+			}
+			case 2:
+			if(info.GetBatteryCount() < 1)
+			{
+				incorrect = true;
+				Log ("Strike! There are no batteries.");
+			}
+		}
+
+		if(incorrect)
+		{
+			module.HandleStrike ();
+		}
+		else
+		{
+			InputAns++;
+			Log ("would like an answer");
+			Log ("Input increased. Current input: " + InputAns);
+		}
+	}
+
+	void submit()
+	{
+		Log ("Submitted: " + InputAns + ", Expecting: " + ans);
+		if (InputAns == ans) {
+			module.HandlePass ();
+			Log ("Solved!");
+		}
+		else 
+		{
+			module.HandleStrike ();
+			Log ("Striked!");
+		}
+	}
+
+	/*public void Button1()
+	{
 		if (info.GetBatteryCount () < 2) 
 		{
 			module.HandleStrike ();
-			print ("WRONG!");
+			Log ("WRONG!");
 		}
 		else 
 		{
 			InputAns++;
-			print ("would like an answer");
+			Log ("would like an answer");
 		}
 	}
 	public void Button2()
 	{
-		playSound.Play ();
 		if (info.GetBatteryCount () < 1) {
 			module.HandleStrike ();
-			print ("WRONG!");
+			Log ("WRONG!");
 		}
 		else 
 		{
 			InputAns++;
-			print ("would like an answer");
+			Log ("would like an answer");
 		}
 	}
 	public void Button3()
 	{
-		playSound.Play ();
 		if (info.GetBatteryCount () < 1) {
 			InputAns++;
-			print ("would like an answer");
+			Log ("would like an answer");
 		} 
 		else 
 		{
 			module.HandleStrike ();
-			print ("WRONG!");
+			Log ("WRONG!");
 		}
-	}
-	public void Submit()
+	}*/
+
+	void Log(string message)
 	{
-		if (InputAns == ans) {
-			module.HandlePass ();
-			print ("Great!");
-		}
-		else 
-		{
-			module.HandleStrike ();
-			print ("DIE");
-		}
+		Debug.LogFormat("[Module Name Here #{0}] {1}", ModuleId, message);
 	}
 }
